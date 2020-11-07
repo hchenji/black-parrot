@@ -11,7 +11,7 @@ module wrapper
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_bedrock_lce_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce)
   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
-  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, `BSG_MAX(2, icache_assoc_p), dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
 
   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
@@ -25,7 +25,6 @@ module wrapper
   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-  , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
 
   )
   ( input                             clk_i
@@ -79,7 +78,7 @@ module wrapper
   logic [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
   logic [icache_block_width_p-1:0] data_mem_lo;
   logic [ptag_width_p-1:0] tag_mem_lo;
-  logic [stat_width_lp-1:0] stat_mem_lo;
+  logic [icache_stat_info_width_lp-1:0] stat_mem_lo;
 
   // Rolly fifo signals
   logic [ptag_width_p-1:0] rolly_ptag_lo;
