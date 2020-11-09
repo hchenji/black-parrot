@@ -23,7 +23,7 @@ module bp_be_pipe_sys
    , localparam exception_width_lp    = `bp_be_exception_width
    , localparam ptw_miss_pkt_width_lp = `bp_be_ptw_miss_pkt_width(vaddr_width_p)
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
-   , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
    , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    )
@@ -54,7 +54,7 @@ module bp_be_pipe_sys
 
    , input [wb_pkt_width_lp-1:0]          iwb_pkt_i
    , input [wb_pkt_width_lp-1:0]          fwb_pkt_i
-   , output [commit_pkt_width_lp-1:0]       commit_pkt_o
+   , output [commit_pkt_width_lp-1:0]     commit_pkt_o
 
    , input                                timer_irq_i
    , input                                software_irq_i
@@ -66,7 +66,6 @@ module bp_be_pipe_sys
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_be_mem_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
   bp_be_dispatch_pkt_s reservation;
   bp_be_decode_s decode;
