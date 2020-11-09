@@ -129,7 +129,6 @@ module bp_be_calculator_top
   logic [dpath_width_p-1:0] pipe_ctl_data_lo, pipe_int_data_lo, pipe_aux_data_lo, pipe_mem_early_data_lo, pipe_mem_final_data_lo, pipe_sys_data_lo, pipe_mul_data_lo, pipe_fma_data_lo;
   rv64_fflags_s pipe_aux_fflags_lo, pipe_fma_fflags_lo;
 
-  logic [vaddr_width_p-1:0] pipe_mem_vaddr_lo;
   logic pipe_sys_exc_v_lo, pipe_sys_miss_v_lo;
 
   logic [vaddr_width_p-1:0] br_tgt_int1;
@@ -307,7 +306,6 @@ module bp_be_calculator_top
      ,.final_data_o(pipe_mem_final_data_lo)
      ,.early_v_o(pipe_mem_early_data_lo_v)
      ,.final_v_o(pipe_mem_final_data_lo_v)
-     ,.final_vaddr_o(pipe_mem_vaddr_lo)
 
      ,.trans_info_i(trans_info_lo)
      );
@@ -333,7 +331,6 @@ module bp_be_calculator_top
      ,.commit_v_i(~exc_stage_r[2].nop_v & ~exc_stage_r[2].poison_v)
      ,.commit_queue_v_i(~exc_stage_r[2].nop_v & ~exc_stage_r[2].roll_v)
      ,.exception_i(exc_stage_r[2].exc & ~{$bits(bp_be_exception_s){exc_stage_r[2].poison_v}})
-     ,.exception_vaddr_i(pipe_mem_vaddr_lo)
      ,.commit_pkt_o(commit_pkt)
      ,.iwb_pkt_i(iwb_pkt_o)
      ,.fwb_pkt_i(fwb_pkt_o)

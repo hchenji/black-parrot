@@ -42,7 +42,6 @@ module bp_be_pipe_sys
    , input                                commit_v_i
    , input                                commit_queue_v_i
    , input [exception_width_lp-1:0]       exception_i
-   , input [vaddr_width_p-1:0]            exception_vaddr_i
 
    , output [ptw_miss_pkt_width_lp-1:0]   ptw_miss_pkt_o
    , input [ptw_fill_pkt_width_lp-1:0]    ptw_fill_pkt_i
@@ -69,7 +68,7 @@ module bp_be_pipe_sys
 
   bp_be_dispatch_pkt_s reservation;
   bp_be_decode_s decode;
-  bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r, csr_cmd_lo;
+  bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r;
   rv64_instr_s instr;
   bp_be_ptw_miss_pkt_s ptw_miss_pkt;
   bp_be_ptw_fill_pkt_s ptw_fill_pkt;
@@ -99,7 +98,6 @@ module bp_be_pipe_sys
       csr_cmd_li.csr_op   = decode.fu_op;
       csr_cmd_li.csr_addr = instr.t.itype.imm12;
       csr_cmd_li.data     = csr_imm_op ? imm : rs1;
-      csr_cmd_li.exc      = '0;
     end
 
   logic csr_cmd_v_lo;
@@ -119,6 +117,7 @@ module bp_be_pipe_sys
      );
 
   logic [vaddr_width_p-1:0] commit_npc_r, commit_pc_r;
+  logic [vaddr_width_p-1:0] commit_nvaddr_r, commit_vaddr_r;
   logic [instr_width_p-1:0] commit_ninstr_r, commit_instr_r;
 
   // Track if an incoming tlb miss is store or load
@@ -134,37 +133,36 @@ module bp_be_pipe_sys
      ,.data_o(is_store_r)
      );
 
+  bp_be_exception_s exception_li;
+  always_comb
+    if (ptw_fill_pkt.instr_page_fault_v)
+      begin
+        exception_li.instr_page_fault = 1'b1;
+      end
+    else if (ptw_fill_pkt.store_page_fault_v)
+      begin
+        exception_li.store_page_fault = 1'b1;
+      end
+    else if (ptw_fill_pkt.load_page_fault_v)
+      begin
+        exception_li.load_page_fault = 1'b1;
+      end
+    else if (commit_v_i)
+      begin
+        exception_li = exception_i;
+      end
+    else
+      begin
+        exception_li = '0;
+      end
+
   always_comb
     begin
-      ptw_miss_pkt.instr_miss_v = commit_v_i & csr_cmd_lo.exc.itlb_miss;
-      ptw_miss_pkt.load_miss_v  = commit_v_i & csr_cmd_lo.exc.dtlb_miss & ~is_store_r;
-      ptw_miss_pkt.store_miss_v = commit_v_i & csr_cmd_lo.exc.dtlb_miss & is_store_r;
+      ptw_miss_pkt.instr_miss_v = commit_v_i & exception_li.itlb_miss;
+      ptw_miss_pkt.load_miss_v  = commit_v_i & exception_li.dtlb_miss & ~is_store_r;
+      ptw_miss_pkt.store_miss_v = commit_v_i & exception_li.dtlb_miss & is_store_r;
       ptw_miss_pkt.pc           = commit_pc_r;
-      ptw_miss_pkt.vaddr        = csr_cmd_lo.exc.itlb_miss ? commit_pc_r : exception_vaddr_i;
-    end
-
-  always_comb
-    begin
-      csr_cmd_lo = csr_cmd_r;
-
-      if (ptw_fill_pkt.instr_page_fault_v)
-        begin
-          csr_cmd_lo.exc.instr_page_fault = 1'b1;
-        end
-      else if (ptw_fill_pkt.store_page_fault_v)
-        begin
-          csr_cmd_lo.exc.store_page_fault = 1'b1;
-        end
-      else if (ptw_fill_pkt.load_page_fault_v)
-        begin
-          csr_cmd_lo.exc.load_page_fault = 1'b1;
-        end
-      else
-        begin
-          // Override data width vaddr for dtlb fill
-          csr_cmd_lo.exc = commit_v_i ? exception_i : '0;
-          csr_cmd_lo.data = csr_cmd_lo.data;
-        end
+      ptw_miss_pkt.vaddr        = exception_li.itlb_miss ? commit_pc_r : commit_vaddr_r;
     end
 
   wire ptw_page_fault_v  = ptw_fill_pkt.instr_page_fault_v | ptw_fill_pkt.load_page_fault_v | ptw_fill_pkt.store_page_fault_v;
@@ -172,7 +170,7 @@ module bp_be_pipe_sys
   wire exception_queue_v_li = commit_queue_v_i;
   wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? ptw_fill_pkt.pc : commit_pc_r;
   wire [vaddr_width_p-1:0] exception_npc_li = ptw_page_fault_v ? '0 : commit_npc_r;
-  wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : exception_vaddr_i;
+  wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : commit_vaddr_r;
   wire [instr_width_p-1:0] exception_instr_li = commit_instr_r;
 
   logic [dword_width_p-1:0] csr_data_lo;
@@ -185,7 +183,7 @@ module bp_be_pipe_sys
 
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.csr_cmd_i(csr_cmd_lo)
+     ,.csr_cmd_i(csr_cmd_r)
      ,.csr_cmd_v_i(csr_cmd_v_lo & commit_v_i)
      ,.csr_data_o(csr_data_lo)
 
@@ -200,6 +198,7 @@ module bp_be_pipe_sys
      ,.exception_npc_i(exception_npc_li)
      ,.exception_vaddr_i(exception_vaddr_li)
      ,.exception_instr_i(exception_instr_li)
+     ,.exception_i(exception_li)
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
@@ -219,6 +218,9 @@ module bp_be_pipe_sys
     begin
       commit_npc_r <= reservation.pc;
       commit_pc_r  <= commit_npc_r;
+
+      commit_nvaddr_r <= rs1 + imm;
+      commit_vaddr_r  <= commit_nvaddr_r;
 
       commit_ninstr_r <= reservation.instr;
       commit_instr_r  <= commit_ninstr_r;
