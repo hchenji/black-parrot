@@ -50,20 +50,8 @@ module bp_be_pipe_long
   wire signed_div_li = decode.fu_op inside {e_mul_op_div, e_mul_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_mul_op_rem, e_mul_op_remu};
 
-  logic [dword_width_p-1:0] op_a, op_b;
-  always_comb
-    begin
-      op_a = decode.opw_v
-             ? signed_div_li
-               ? {{word_width_p{rs1[word_width_p-1]}}, rs1[0+:word_width_p]}
-               : rs1[0+:word_width_p]
-             : rs1;
-      op_b = decode.opw_v
-             ? signed_div_li
-               ? {{word_width_p{rs2[word_width_p-1]}}, rs2[0+:word_width_p]}
-               : rs2[0+:word_width_p]
-             : rs2;
-    end
+  wire [dword_width_p-1:0] op_a = decode.opw_v ? (rs1 << word_width_p) : rs1;
+  wire [dword_width_p-1:0] op_b = decode.opw_v ? (rs2 << word_width_p) : rs2;
 
   // We actual could exit early here
   logic [dword_width_p-1:0] quotient_lo, remainder_lo;
@@ -246,7 +234,7 @@ module bp_be_pipe_long
     if (opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
       rd_data_lo = $signed(quotient_lo[0+:word_width_p]);
     else if (opw_v_r && fu_op_r inside {e_mul_op_rem, e_mul_op_remu})
-      rd_data_lo = $signed(remainder_lo[0+:word_width_p]);
+      rd_data_lo = $signed(remainder_lo) >>> word_width_p;
     else if (~opw_v_r && fu_op_r inside {e_mul_op_div, e_mul_op_divu})
       rd_data_lo = quotient_lo;
     else

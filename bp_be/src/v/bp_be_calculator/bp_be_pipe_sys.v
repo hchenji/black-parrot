@@ -168,8 +168,7 @@ module bp_be_pipe_sys
   wire ptw_page_fault_v  = ptw_fill_pkt.instr_page_fault_v | ptw_fill_pkt.load_page_fault_v | ptw_fill_pkt.store_page_fault_v;
   wire exception_v_li = ptw_page_fault_v | commit_v_i;
   wire exception_queue_v_li = commit_queue_v_i;
-  wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? ptw_fill_pkt.pc : commit_pc_r;
-  wire [vaddr_width_p-1:0] exception_npc_li = ptw_page_fault_v ? '0 : commit_npc_r;
+  wire [vaddr_width_p-1:0] exception_npc_li = commit_npc_r;
   wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : commit_vaddr_r;
   wire [instr_width_p-1:0] exception_instr_li = commit_instr_r;
 
@@ -187,14 +186,11 @@ module bp_be_pipe_sys
      ,.csr_cmd_v_i(csr_cmd_v_lo & commit_v_i)
      ,.csr_data_o(csr_data_lo)
 
-     // Simplify
-     ,.instret_i(commit_v_i & ~commit_pkt.exception & ~commit_pkt.rollback & ~commit_pkt.icache_miss)
      ,.fflags_acc_i(({5{iwb_pkt.fflags_w_v}} & iwb_pkt.fflags) | ({5{fwb_pkt.fflags_w_v}} & fwb_pkt.fflags))
      ,.frf_w_v_i(fwb_pkt.frd_w_v)
 
      ,.exception_v_i(exception_v_li)
      ,.exception_queue_v_i(exception_queue_v_li)
-     ,.exception_pc_i(exception_pc_li)
      ,.exception_npc_i(exception_npc_li)
      ,.exception_vaddr_i(exception_vaddr_li)
      ,.exception_instr_i(exception_instr_li)

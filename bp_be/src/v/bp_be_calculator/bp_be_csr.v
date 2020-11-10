@@ -26,13 +26,11 @@ module bp_be_csr
     , output logic [dword_width_p-1:0]  csr_data_o
 
     // Misc interface
-    , input                             instret_i
     , input rv64_fflags_s               fflags_acc_i
     , input                             frf_w_v_i
 
     , input                             exception_v_i
     , input                             exception_queue_v_i
-    , input [vaddr_width_p-1:0]         exception_pc_i
     , input [vaddr_width_p-1:0]         exception_npc_i
     , input [vaddr_width_p-1:0]         exception_vaddr_i
     , input [instr_width_p-1:0]         exception_instr_i
@@ -72,6 +70,7 @@ assign trans_info_o = trans_info_cast_o;
 
 // The muxed and demuxed CSR outputs
 logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
+logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 
 rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
 rv64_mie_s sie_rwmask_li;
@@ -239,6 +238,8 @@ always_comb
     endcase
   end
 
+wire instret_i = exception_v_i & ~exception_v_o & ~commit_pkt_cast_o.rollback;
+
 logic [vaddr_width_p-1:0] apc_n, apc_r;
 bsg_dff_reset
  #(.width_p(vaddr_width_p), .reset_val_p($unsigned(boot_pc_p)))
@@ -327,7 +328,6 @@ assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
                             ,default: '0
                            };
 
-logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 // CSR data
 always_comb
   begin
@@ -380,7 +380,7 @@ always_comb
     if (~ebreak_v_li & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
       begin
         enter_debug    = 1'b1;
-        dpc_li         = paddr_width_p'($signed(exception_pc_i));
+        dpc_li         = paddr_width_p'($signed(apc_r));
         dcsr_li.cause  = 1; // Ebreak
         dcsr_li.prv    = priv_mode_r;
       end
@@ -614,7 +614,7 @@ always_comb
             mstatus_li.spie      = mstatus_lo.sie;
             mstatus_li.sie       = 1'b0;
 
-            sepc_li              = paddr_width_p'($signed(exception_pc_i));
+            sepc_li              = paddr_width_p'($signed(apc_r));
             // TODO: Replace with struct
             stval_li             = (exception_ecode_li == 2)
                                   ? exception_instr_i 
@@ -635,7 +635,7 @@ always_comb
             mstatus_li.mpie      = mstatus_lo.mie;
             mstatus_li.mie       = 1'b0;
 
-            mepc_li              = paddr_width_p'($signed(exception_pc_i));
+            mepc_li              = paddr_width_p'($signed(apc_r));
             mtval_li             = (exception_ecode_li == 2)
                                   ? exception_instr_i 
                                   : paddr_width_p'($signed(exception_vaddr_i));
@@ -677,7 +677,7 @@ assign csr_data_o = dword_width_p'(csr_data_lo);
 assign commit_pkt_cast_o.v                = |{exception.fencei_v, sfence_v_o, exception_v_o, interrupt_v_o, ret_v_o, satp_v_o, exception.itlb_miss, exception.icache_miss, exception.dcache_miss, exception.dtlb_miss};
 assign commit_pkt_cast_o.queue_v          = exception_queue_v_i;
 assign commit_pkt_cast_o.instret          = instret_i;
-assign commit_pkt_cast_o.pc               = exception_pc_i;
+assign commit_pkt_cast_o.pc               = apc_r;
 assign commit_pkt_cast_o.instr            = exception_instr_i;
 assign commit_pkt_cast_o.npc              = apc_n;
 assign commit_pkt_cast_o.priv_n           = priv_mode_n;
