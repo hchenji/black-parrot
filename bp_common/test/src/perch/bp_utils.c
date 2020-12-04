@@ -67,7 +67,7 @@ void bp_putcore(uint8_t ch) {
   *(PUTCORE_BASE_ADDR+bp_get_hart()) = ch;
 }
 
-void printnum(void (*fptr)(int, void**), void **putdat,
+void bp_printnum(void (*fptr)(int, void**), void **putdat,
                     unsigned long long num, unsigned base, int width, int padc)
 {
   unsigned digs[sizeof(num)*CHAR_BIT];
@@ -108,7 +108,7 @@ static long long getint(va_list *ap, int lflag)
     return va_arg(*ap, int);
 }
 
-void vprintfmt(void (*fptr)(int, void**), void **putdat, const char *fmt, va_list ap)
+void bp_vprintfmt(void (*fptr)(int, void**), void **putdat, const char *fmt, va_list ap)
 {
   register const char* p;
   const char* last_fmt;
@@ -242,7 +242,7 @@ void vprintfmt(void (*fptr)(int, void**), void **putdat, const char *fmt, va_lis
     unsigned_number:
       num = getuint(&ap, lflag);
     signed_number:
-      printnum(fptr, putdat, num, base, width, padc);
+      bp_printnum(fptr, putdat, num, base, width, padc);
       break;
 
     // escaped '%' character
@@ -264,7 +264,7 @@ int bp_printf(const char* fmt, ...)
   va_list ap;
   va_start(ap, fmt);
 
-  vprintfmt((void*)bp_cprint, 0, fmt, ap);
+  bp_vprintfmt((void*)bp_cprint, 0, fmt, ap);
 
   va_end(ap);
   return 0; // incorrect return value, but who cares, anyway?
@@ -275,7 +275,7 @@ int bp_printcore(const char* fmt, ...)
   va_list ap;
   va_start(ap, fmt);
 
-  vprintfmt((void*)bp_putcore, 0, fmt, ap);
+  bp_vprintfmt((void*)bp_putcore, 0, fmt, ap);
 
   va_end(ap);
   return 0; // incorrect return value, but who cares, anyway?

@@ -20,6 +20,10 @@ void bp_cprint(uint8_t ch);
 
 void bp_putcore(uint8_t ch);
 
+int bp_printf(const char* fmt, ...);
+
+int bp_printcore(const char* fmt, ...);
+
 void bp_finish(uint8_t code);
 
 #define BP_CFG_BASE_ADDR ((char *)(0x00200000))

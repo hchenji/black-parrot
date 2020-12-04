@@ -13,8 +13,8 @@ export TOUCH_PATH   := $(BP_TOP_DIR)/syn/touchfiles
 
 export TB    ?= bp_tethered
 export CFG   ?= e_bp_multicore_2_cce_ucode_cfg
-export SUITE ?= bp_tests
-export PROG  ?= bubblesort_demo
+export SUITE ?= beebs
+export PROG  ?= aha-compress
 export TAG   ?= none
 
 include $(BP_TEST_DIR)/Makefile.tests
