@@ -64,7 +64,7 @@ void bp_cprint(uint8_t ch) {
 
 void bp_putcore(uint8_t ch) {
 
-  *(PUTCORE_BASE_ADDR+bp_get_hart()) = ch;
+  *(PUTCORE_BASE_ADDR + (bp_get_hart() << 3)) = ch;
 }
 
 void bp_printnum(void (*fptr)(int, void**), void **putdat,
