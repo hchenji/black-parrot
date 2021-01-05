@@ -32,6 +32,9 @@ endef
 bp_tests_build:
 	$(MAKE) -C $(bp_tests_dir) clean all
 
+demos_build:
+	$(MAKE) -C $(demos_dir) clean all
+
 riscv_tests_build:
 	cd $(riscv_tests_dir); ./configure --target=riscv64-unknown-elf-dramfs
 	$(MAKE) -C $(riscv_tests_dir) clean all
@@ -80,6 +83,8 @@ $(eval $(call submodule_test_template,beebs,$(beebs_dir)))
 $(eval $(call submodule_test_template,coremark,$(coremark_dir)))
 $(eval $(call submodule_test_template,spec,$(spec_dir)))
 $(eval $(call submodule_test_template,riscvdv,$(riscvdv_dir)))
+$(eval $(call submodule_test_template,demos,$(demos_dir)))
+
 
 RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d -t
 RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy

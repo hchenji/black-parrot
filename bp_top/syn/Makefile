@@ -12,9 +12,9 @@ export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 export TOUCH_PATH   := $(BP_TOP_DIR)/syn/touchfiles
 
 export TB    ?= bp_tethered
-export CFG   ?= e_bp_default_cfg
-export SUITE ?= bp_tests
-export PROG  ?= bubblesort_demo
+export CFG   ?= e_bp_multicore_2_cce_ucode_cfg
+export SUITE ?= demos
+export PROG  ?= bubblesort_mc_demo_2
 export TAG   ?= none
 
 include $(BP_TEST_DIR)/Makefile.tests
